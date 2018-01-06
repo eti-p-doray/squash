@@ -1,0 +1,23 @@
+
+load(
+    "//squash:copts.bzl",
+    "SQUASH_DEFAULT_COPTS",
+    "SQUASH_TEST_COPTS",
+    "SQUASH_EXCEPTIONS_FLAG",
+)
+
+cc_library(
+  name = "base",
+  srcs = [
+    "logging.h",
+    "macros.h",
+    "memory/ptr_util.h",
+    "optional.h",
+  ],
+  copts = SQUASH_DEFAULT_COPTS,
+  visibility = ["//visibility:public"],
+  deps = [
+    "@easyloggingpp//:logging",
+    "@com_google_absl//absl/types:optional"
+  ],
+)
