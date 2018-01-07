@@ -1,4 +1,4 @@
-language: cpp,
+language: cpp
 
 env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
 
