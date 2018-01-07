@@ -38,14 +38,14 @@ class EncodedView {
     using pointer = size_t*;
 
     Iterator(const EncodedView& encoded_view, difference_type pos)
-        : encoded_view_(encoded_view), pos_(pos) {}
+        : encoded_view_(&encoded_view), pos_(pos) {}
 
     value_type operator*() const {
-      return encoded_view_.Projection(static_cast<offset_t>(pos_));
+      return encoded_view_->Projection(static_cast<offset_t>(pos_));
     }
 
     value_type operator[](difference_type n) const {
-      return encoded_view_.Projection(static_cast<offset_t>(pos_ + n));
+      return encoded_view_->Projection(static_cast<offset_t>(pos_ + n));
     }
 
     Iterator& operator++() {
@@ -107,7 +107,7 @@ class EncodedView {
     }
 
    private:
-    const EncodedView& encoded_view_;
+    const EncodedView* encoded_view_;
     difference_type pos_;
   };
 
