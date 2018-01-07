@@ -10,10 +10,11 @@
 #include <string>
 #include <utility>
 
-#include "squash/base/numerics/safe_conversions.h"
+#include "base/numerics/safe_conversions.h"
+
 #include "squash/zucchini/image_utils.h"
 #include "squash/zucchini/test_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

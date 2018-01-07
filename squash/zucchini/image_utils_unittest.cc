@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 #include "squash/base/logging.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

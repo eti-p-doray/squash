@@ -8,7 +8,8 @@
 #include <iosfwd>
 #include <vector>
 
-#include "squash/base/files/file_path.h"
+#include "boost/filesystem.hpp"
+
 #include "squash/zucchini/zucchini.h"
 
 // Zucchini commands and tools that can be invoked from command-line.
@@ -22,7 +23,7 @@ class CommandLine;
 // Aggregated parameter for Main*() functions, to simplify interface.
 struct MainParams {
   const base::CommandLine& command_line;
-  const std::vector<base::FilePath>& file_paths;
+  const std::vector<boost::filesystem::path>& file_paths;
   std::ostream& out;
   std::ostream& err;
 };

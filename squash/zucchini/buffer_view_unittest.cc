@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "squash/base/test/gtest_util.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 
@@ -48,6 +48,8 @@ TEST_F(BufferViewTest, FromRange) {
       ConstBufferView::FromRange(std::begin(bytes_), std::end(bytes_));
   EXPECT_EQ(kLen, buffer.size());
   EXPECT_EQ(std::begin(bytes_), buffer.begin());
+
+  //ConstBufferView::FromRange(std::end(bytes_), std::begin(bytes_));
 
   EXPECT_DCHECK_DEATH(
       ConstBufferView::FromRange(std::end(bytes_), std::begin(bytes_)));

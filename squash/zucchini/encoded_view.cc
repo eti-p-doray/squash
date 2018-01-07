@@ -12,9 +12,7 @@
 namespace zucchini {
 
 EncodedView::EncodedView(const ImageIndex& image_index)
-    : image_index_(image_index), pool_infos_(image_index.PoolCount()) {
-  DCHECK(!pool_infos_.empty());
-}
+    : image_index_(image_index), pool_infos_(image_index.PoolCount()) {}
 EncodedView::~EncodedView() = default;
 
 EncodedView::value_type EncodedView::Projection(offset_t location) const {

@@ -8,9 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "squash/base/files/file.h"
-#include "squash/base/files/file_path.h"
-#include "squash/base/files/memory_mapped_file.h"
+#include "boost/filesystem.hpp"
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+
 #include "squash/base/macros.h"
 #include "squash/zucchini/buffer_view.h"
 
@@ -20,15 +21,18 @@ namespace zucchini {
 class MappedFileReader {
  public:
   // Opens |file_path| and maps it to memory for reading.
-  explicit MappedFileReader(const base::FilePath& file_path);
+  explicit MappedFileReader(const boost::filesystem::path& file_path);
 
-  bool IsValid() const { return buffer_.IsValid(); }
-  const uint8_t* data() const { return buffer_.data(); }
-  size_t length() const { return buffer_.length(); }
+  bool IsValid() const { return buffer_.get_size() != 0; }
+  const uint8_t* data() const {
+    return reinterpret_cast<const uint8_t*>(buffer_.get_address());
+  }
+  size_t length() const { return buffer_.get_size(); }
   zucchini::ConstBufferView region() const { return {data(), length()}; }
 
  private:
-  base::MemoryMappedFile buffer_;
+  boost::interprocess::file_mapping file_mapping_;
+  boost::interprocess::mapped_region buffer_;
 
   DISALLOW_COPY_AND_ASSIGN(MappedFileReader);
 };
@@ -38,12 +42,14 @@ class MappedFileReader {
 class MappedFileWriter {
  public:
   // Creates |file_path| and maps it to memory for writing.
-  MappedFileWriter(const base::FilePath& file_path, size_t length);
+  MappedFileWriter(const boost::filesystem::path& file_path, size_t length);
   ~MappedFileWriter();
 
-  bool IsValid() const { return buffer_.IsValid(); }
-  uint8_t* data() { return buffer_.data(); }
-  size_t length() const { return buffer_.length(); }
+  bool IsValid() const { return buffer_.get_size() != 0; }
+  uint8_t* data() {
+    return reinterpret_cast<uint8_t*>(buffer_.get_address());
+  }
+  size_t length() const { return buffer_.get_size(); }
   zucchini::MutableBufferView region() { return {data(), length()}; }
 
   // Indicates that the file should not be deleted on destruction. Returns true
@@ -57,9 +63,9 @@ class MappedFileWriter {
     kManualDeleteOnClose
   };
 
-  base::FilePath file_path_;
-  base::File file_handle_;
-  base::MemoryMappedFile buffer_;
+  boost::filesystem::path file_path_;
+  boost::interprocess::file_mapping file_mapping_;
+  boost::interprocess::mapped_region buffer_;
   OnCloseDeleteBehavior delete_behavior_;
 
   DISALLOW_COPY_AND_ASSIGN(MappedFileWriter);

@@ -6,15 +6,15 @@
 
 #include <stddef.h>
 
+#include <chrono>
 #include <memory>
 #include <ostream>
 #include <vector>
 
+#include "boost/filesystem.hpp"
+
 #include "squash/base/command_line.h"
 #include "squash/base/logging.h"
-#include "squash/base/process/process_metrics.h"
-#include "squash/base/time/time.h"
-#include "build/build_config.h"
 #include "squash/zucchini/io_utils.h"
 #include "squash/zucchini/zucchini_commands.h"
 
@@ -65,22 +65,22 @@ class ScopedResourceUsageTracker {
  public:
   // Initializes states for tracking.
   ScopedResourceUsageTracker() {
-    start_time_ = base::TimeTicks::Now();
+    start_time_ = std::chrono::high_resolution_clock::now();
 
-#if !defined(OS_MACOSX)
+/*#if !defined(OS_MACOSX)
     std::unique_ptr<base::ProcessMetrics> process_metrics(
         base::ProcessMetrics::CreateProcessMetrics(
             base::GetCurrentProcessHandle()));
     start_peak_page_file_usage_ = process_metrics->GetPeakPagefileUsage();
     start_peak_working_set_size_ = process_metrics->GetPeakWorkingSetSize();
-#endif  // !defined(OS_MACOSX)
+#endif  // !defined(OS_MACOSX)*/
   }
 
   // Computes and prints usage.
   ~ScopedResourceUsageTracker() {
-    base::TimeTicks end_time = base::TimeTicks::Now();
+    auto end_time = std::chrono::high_resolution_clock::now();
 
-#if !defined(OS_MACOSX)
+/*#if !defined(OS_MACOSX)
     std::unique_ptr<base::ProcessMetrics> process_metrics(
         base::ProcessMetrics::CreateProcessMetrics(
             base::GetCurrentProcessHandle()));
@@ -98,18 +98,18 @@ class ScopedResourceUsageTracker {
               << (cur_peak_working_set_size - start_peak_working_set_size_) /
                      1024
               << " KiB";
-#endif  // !defined(OS_MACOSX)
+#endif  // !defined(OS_MACOSX)*/
 
-    LOG(INFO) << "Zucchini.TotalTime " << (end_time - start_time_).InSecondsF()
-              << " s";
+    std::chrono::duration<double> diff = end_time - start_time_;
+    LOG(INFO) << "Zucchini.TotalTime " << diff.count() << " s";
   }
 
  private:
-  base::TimeTicks start_time_;
-#if !defined(OS_MACOSX)
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
+/*#if !defined(OS_MACOSX)
   size_t start_peak_page_file_usage_;
   size_t start_peak_working_set_size_;
-#endif  // !defined(OS_MACOSX)
+#endif  // !defined(OS_MACOSX)*/
 };
 
 /******** Helper functions ********/
@@ -119,7 +119,7 @@ class ScopedResourceUsageTracker {
 // returns true. Otherwise returns false.
 bool CheckAndGetFilePathParams(const base::CommandLine& command_line,
                                size_t expected_count,
-                               std::vector<base::FilePath>* paths) {
+                               std::vector<boost::filesystem::path>* paths) {
   const base::CommandLine::StringVector& args = command_line.GetArgs();
   if (args.size() != expected_count)
     return false;
@@ -170,7 +170,7 @@ zucchini::status::Code RunZucchiniCommand(const base::CommandLine& command_line,
   }
 
   // Try to parse filename arguments. On failure, print usage and quit.
-  std::vector<base::FilePath> paths;
+  std::vector<boost::filesystem::path> paths;
   if (!CheckAndGetFilePathParams(command_line, command_use->num_args, &paths)) {
     err << command_use->usage << std::endl;
     PrintUsage(err);

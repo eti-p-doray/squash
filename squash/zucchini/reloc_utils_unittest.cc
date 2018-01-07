@@ -13,13 +13,13 @@
 
 #include "squash/base/logging.h"
 #include "squash/base/memory/ptr_util.h"
-#include "squash/base/numerics/safe_conversions.h"
+#include "base/numerics/safe_conversions.h"
 #include "squash/base/test/gtest_util.h"
 #include "squash/zucchini/address_translator.h"
 #include "squash/zucchini/algorithm.h"
 #include "squash/zucchini/image_utils.h"
 #include "squash/zucchini/test_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

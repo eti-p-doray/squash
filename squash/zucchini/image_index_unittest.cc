@@ -12,7 +12,7 @@
 #include "squash/base/test/gtest_util.h"
 #include "squash/zucchini/image_utils.h"
 #include "squash/zucchini/test_disassembler.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

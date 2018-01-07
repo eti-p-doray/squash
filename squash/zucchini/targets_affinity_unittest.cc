@@ -11,7 +11,7 @@
 
 #include "squash/zucchini/equivalence_map.h"
 #include "squash/zucchini/image_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

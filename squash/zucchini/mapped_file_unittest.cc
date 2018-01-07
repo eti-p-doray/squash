@@ -4,51 +4,50 @@
 
 #include "squash/zucchini/mapped_file.h"
 
-#include "squash/base/files/file_path.h"
-#include "squash/base/files/file_util.h"
-#include "squash/base/files/scoped_temp_dir.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "boost/filesystem.hpp"
+
+#include "gtest/gtest.h"
 
 namespace zucchini {
 
 class MappedFileWriterTest : public testing::Test {
  protected:
-  MappedFileWriterTest() = default;
-  void SetUp() override {
-    ASSERT_TRUE(temp_dir_.CreateUniqueTempDir());
-    file_path_ = temp_dir_.GetPath().AppendASCII("test-file");
+  MappedFileWriterTest() {
+    file_path_ = boost::filesystem::temp_directory_path();
+    file_path_ /= "test-file";
+  }
+  ~MappedFileWriterTest() {
+    boost::filesystem::remove_all(file_path_);
   }
 
-  base::FilePath file_path_;
 
- private:
-  base::ScopedTempDir temp_dir_;
+  boost::filesystem::path file_path_;
 };
 
 TEST_F(MappedFileWriterTest, ErrorCreating) {
   // Create a directory |file_path_|, so |file_writer| fails when it tries to
   // open a file with the same name for write.
-  ASSERT_TRUE(base::CreateDirectory(file_path_));
+  ASSERT_TRUE(boost::filesystem::create_directory(file_path_));
   {
     MappedFileWriter file_writer(file_path_, 10);
     EXPECT_FALSE(file_writer.IsValid());
   }
-  EXPECT_TRUE(base::PathExists(file_path_));
+  EXPECT_TRUE(boost::filesystem::exists(file_path_));
 }
 
 TEST_F(MappedFileWriterTest, Keep) {
-  EXPECT_FALSE(base::PathExists(file_path_));
+  EXPECT_FALSE(boost::filesystem::exists(file_path_));
   {
     MappedFileWriter file_writer(file_path_, 10);
     EXPECT_TRUE(file_writer.Keep());
   }
-  EXPECT_TRUE(base::PathExists(file_path_));
+  EXPECT_TRUE(boost::filesystem::exists(file_path_));
 }
 
 TEST_F(MappedFileWriterTest, DeleteOnClose) {
-  EXPECT_FALSE(base::PathExists(file_path_));
+  EXPECT_FALSE(boost::filesystem::exists(file_path_));
   { MappedFileWriter file_writer(file_path_, 10); }
-  EXPECT_FALSE(base::PathExists(file_path_));
+  EXPECT_FALSE(boost::filesystem::exists(file_path_));
 }
 
 }  // namespace zucchini

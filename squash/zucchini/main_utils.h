@@ -7,17 +7,11 @@
 
 #include <iosfwd>
 
-#include "squash/base/files/file_path.h"
+#include "squash/base/command_line.h"
 #include "squash/zucchini/zucchini.h"
 
 // Utilities to run Zucchini command based on command-line input, and to print
 // help messages.
-
-namespace base {
-
-class CommandLine;
-
-}  // namespace base
 
 // To add a new Zucchini command:
 // 1. Declare the command's main function in zucchini_command.h. Its signature

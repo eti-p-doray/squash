@@ -6,9 +6,8 @@
 
 #include <vector>
 
-#include "squash/base/bind.h"
 #include "squash/zucchini/buffer_view.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 
@@ -22,9 +21,9 @@ TEST(ElementDetectionTest, ElementFinderEmpty) {
   std::vector<uint8_t> buffer(10, 0);
   ElementFinder finder(
       ConstBufferView(buffer.data(), buffer.size()),
-      base::BindRepeating([](ConstBufferView image) -> base::Optional<Element> {
+      [](ConstBufferView image) -> base::Optional<Element> {
         return base::nullopt;
-      }));
+      });
   EXPECT_EQ(base::nullopt, finder.GetNext());
 }
 
@@ -33,23 +32,20 @@ ElementVector TestElementFinder(std::vector<uint8_t> buffer) {
 
   ElementFinder finder(
       image,
-      base::BindRepeating(
-          [](ConstBufferView image,
-             ConstBufferView region) -> base::Optional<Element> {
-            EXPECT_GE(region.begin(), image.begin());
-            EXPECT_LE(region.end(), image.end());
-            EXPECT_GE(region.size(), 0U);
+      [image](ConstBufferView region) -> base::Optional<Element> {
+        EXPECT_GE(region.begin(), image.begin());
+        EXPECT_LE(region.end(), image.end());
+        EXPECT_GE(region.size(), 0U);
 
-            if (region[0] != 0) {
-              offset_t length = 1;
-              while (length < region.size() && region[length] == region[0])
-                ++length;
-              return Element{{0, length},
-                             static_cast<ExecutableType>(region[0])};
-            }
-            return base::nullopt;
-          },
-          image));
+        if (region[0] != 0) {
+          offset_t length = 1;
+          while (length < region.size() && region[length] == region[0])
+            ++length;
+          return Element{{0, length},
+                         static_cast<ExecutableType>(region[0])};
+        }
+        return base::nullopt;
+      });
   std::vector<Element> elements;
   for (auto element = finder.GetNext(); element; element = finder.GetNext()) {
     elements.push_back(*element);

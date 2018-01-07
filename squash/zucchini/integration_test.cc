@@ -8,42 +8,31 @@
 #include <string>
 #include <vector>
 
-#include "squash/base/files/file_path.h"
-#include "squash/base/files/memory_mapped_file.h"
+#include "boost/filesystem.hpp"
+#include "gtest/gtest.h"
 #include "squash/base/optional.h"
-#include "squash/base/path_service.h"
 #include "squash/zucchini/buffer_view.h"
+#include "squash/zucchini/mapped_file.h"
 #include "squash/zucchini/patch_reader.h"
 #include "squash/zucchini/patch_writer.h"
 #include "squash/zucchini/zucchini.h"
-#include "testing/gtest/include/gtest/gtest.h"
 
 namespace zucchini {
 
-base::FilePath MakeTestPath(const std::string& filename) {
-  base::FilePath path;
-  DCHECK(PathService::Get(base::DIR_SOURCE_ROOT, &path));
-  return path.AppendASCII("chrome")
-      .AppendASCII("installer")
-      .AppendASCII("zucchini")
-      .AppendASCII("testdata")
-      .AppendASCII(filename);
+boost::filesystem::path MakeTestPath(const std::string& filename) {
+  return boost::filesystem::path("squash") / "testdata" / filename;
 }
 
 void TestGenApply(const std::string& old_filename,
                   const std::string& new_filename,
                   bool raw) {
-  base::FilePath old_path = MakeTestPath(old_filename);
-  base::FilePath new_path = MakeTestPath(new_filename);
+  boost::filesystem::path old_path = MakeTestPath(old_filename);
+  boost::filesystem::path new_path = MakeTestPath(new_filename);
 
-  base::MemoryMappedFile old_file;
-  ASSERT_TRUE(old_file.Initialize(old_path));
-
-  base::MemoryMappedFile new_file;
-  ASSERT_TRUE(new_file.Initialize(new_path));
-
-  ConstBufferView old_region(old_file.data(), old_file.length());
-  ConstBufferView new_region(new_file.data(), new_file.length());
+  MappedFileReader old_file(old_path);
+  MappedFileReader new_file(new_path);
+  ConstBufferView old_region = old_file.region();
+  ConstBufferView new_region = new_file.region();
 
   EnsemblePatchWriter patch_writer(old_region, new_region);
 

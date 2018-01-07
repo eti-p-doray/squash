@@ -9,15 +9,20 @@ load(
 cc_library(
   name = "base",
   srcs = [
+    "command_line.cc",
+    "command_line.h",
+    "logging.cc",
     "logging.h",
     "macros.h",
     "memory/ptr_util.h",
     "optional.h",
+    "test/gtest_util.h",
   ],
   copts = SQUASH_DEFAULT_COPTS,
   visibility = ["//visibility:public"],
   deps = [
     "@easyloggingpp//:logging",
-    "@com_google_absl//absl/types:optional"
+    "@com_google_absl//absl/types:optional",
+    "@com_google_googletest//:gtest",
   ],
 )

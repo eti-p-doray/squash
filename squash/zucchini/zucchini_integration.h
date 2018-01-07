@@ -5,7 +5,8 @@
 #ifndef CHROME_INSTALLER_ZUCCHINI_ZUCCHINI_INTEGRATION_H_
 #define CHROME_INSTALLER_ZUCCHINI_ZUCCHINI_INTEGRATION_H_
 
-#include "squash/base/files/file_path.h"
+#include "boost/filesystem.hpp"
+
 #include "squash/zucchini/zucchini.h"
 
 namespace zucchini {
@@ -14,9 +15,9 @@ namespace zucchini {
 // result to |new_path|. Since this uses memory mapped files, crashes are
 // expected in case of I/O errors. |new_path| is kept iff returned code is
 // kStatusSuccess, and is deleted otherwise.
-status::Code Apply(const base::FilePath& old_path,
-                   const base::FilePath& patch_path,
-                   const base::FilePath& new_path);
+status::Code Apply(const boost::filesystem::path& old_path,
+                   const boost::filesystem::path& patch_path,
+                   const boost::filesystem::path& new_path);
 
 }  // namespace zucchini
 

@@ -58,7 +58,7 @@ void TargetPool::InsertTargets(const std::vector<offset_t>& targets) {
 
 offset_t TargetPool::KeyForOffset(offset_t offset) const {
   auto pos = std::lower_bound(targets_.begin(), targets_.end(), offset);
-  DCHECK(pos != targets_.end() && *pos == offset);
+  //DCHECK(pos != targets_.end() && *pos == offset);
   return static_cast<offset_t>(pos - targets_.begin());
 }
 

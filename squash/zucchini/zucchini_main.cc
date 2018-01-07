@@ -6,44 +6,11 @@
 
 #include "squash/base/command_line.h"
 #include "squash/base/logging.h"
-#include "squash/base/process/memory.h"
-#include "build/build_config.h"
 #include "squash/zucchini/main_utils.h"
-
-#if defined(OS_WIN)
-#include "squash/base/win/process_startup_helper.h"
-#endif  // defined(OS_WIN)
-
-namespace {
-
-void InitLogging() {
-  logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  settings.log_file = nullptr;
-  settings.lock_log = logging::DONT_LOCK_LOG_FILE;
-  settings.delete_old = logging::APPEND_TO_OLD_LOG_FILE;
-  bool logging_res = logging::InitLogging(settings);
-  CHECK(logging_res);
-}
-
-void InitErrorHandling(const base::CommandLine& command_line) {
-  base::EnableTerminationOnHeapCorruption();
-  base::EnableTerminationOnOutOfMemory();
-#if defined(OS_WIN)
-  base::win::RegisterInvalidParamHandler();
-  base::win::SetupCRT(command_line);
-#endif  // defined(OS_WIN)
-}
-
-}  // namespace
 
 int main(int argc, const char* argv[]) {
   // Initialize infrastructure from base.
-  base::CommandLine::Init(argc, argv);
-  const base::CommandLine& command_line =
-      *base::CommandLine::ForCurrentProcess();
-  InitLogging();
-  InitErrorHandling(command_line);
+  base::CommandLine command_line(argc, argv);
   zucchini::status::Code status =
       RunZucchiniCommand(command_line, std::cout, std::cerr);
   if (status != zucchini::status::kStatusSuccess)

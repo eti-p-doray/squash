@@ -11,9 +11,9 @@
 
 namespace zucchini {
 
-status::Code Apply(const base::FilePath& old_path,
-                   const base::FilePath& patch_path,
-                   const base::FilePath& new_path) {
+status::Code Apply(const boost::filesystem::path& old_path,
+                   const boost::filesystem::path& patch_path,
+                   const boost::filesystem::path& new_path) {
   MappedFileReader patch_file(patch_path);
   if (!patch_file.IsValid())
     return status::kStatusFileReadError;

@@ -17,7 +17,7 @@
 #include "squash/base/logging.h"
 #include "squash/zucchini/buffer_view.h"
 #include "squash/zucchini/image_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

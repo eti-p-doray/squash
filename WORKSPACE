@@ -10,12 +10,19 @@ http_archive(
   strip_prefix = "abseil-cpp-master",
 )
 
+http_archive(
+  name = "com_github_nelhage_boost",
+  urls = ["https://github.com/nelhage/rules_boost/archive/master.tar.gz"],
+  strip_prefix = "rules_boost-master",
+)
+load("@com_github_nelhage_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
+
 new_local_repository(
   name = "chromium",
   path = "third_party/chromium",
   build_file = "third_party/chromium.BUILD",
 )
-
 
 new_local_repository(
   name = "easyloggingpp",

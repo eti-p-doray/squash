@@ -14,7 +14,7 @@
 #include "squash/base/test/gtest_util.h"
 #include "squash/zucchini/address_translator.h"
 #include "squash/zucchini/image_utils.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 

@@ -10,10 +10,9 @@
 #include <iostream>
 #include <ostream>
 
+#include "boost/filesystem.hpp"
+
 #include "squash/base/command_line.h"
-#include "squash/base/files/file.h"
-#include "squash/base/files/file_path.h"
-#include "squash/base/files/memory_mapped_file.h"
 #include "squash/base/logging.h"
 #include "squash/base/macros.h"
 #include "squash/zucchini/buffer_view.h"

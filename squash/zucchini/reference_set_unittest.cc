@@ -9,7 +9,7 @@
 #include "squash/zucchini/image_utils.h"
 #include "squash/zucchini/target_pool.h"
 #include "squash/zucchini/test_reference_reader.h"
-#include "testing/gtest/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 namespace zucchini {
 
