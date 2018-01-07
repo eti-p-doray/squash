@@ -105,7 +105,6 @@ cc_binary(
     ":zucchini_io",
     ":zucchini_lib",
     "//squash/base:base",
-    "@com_github_vietjtnguyen_argagg//:argagg"
   ],
 )
 
