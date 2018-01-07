@@ -5,6 +5,8 @@
 #ifndef SQUASH_BASE_MACROS_H_
 #define SQUASH_BASE_MACROS_H_
 
+#include <stddef.h>
+
 // Distinguish mips32.
 #if defined(__mips__) && (_MIPS_SIM == _ABIO32) && !defined(__mips32__)
 #define __mips32__

@@ -8,6 +8,7 @@ GCC_FLAGS = [
     "-Wpointer-arith",
     "-Wunused-local-typedefs",
     "-Wunused-result",
+    "-Wno-unused-const-variable",
     "-Wvarargs",
     "-Wvla",  # variable-length array
     "-Wwrite-strings",
