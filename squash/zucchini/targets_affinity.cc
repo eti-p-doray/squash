@@ -8,6 +8,7 @@
 
 #include "squash/base/logging.h"
 #include "squash/zucchini/equivalence_map.h"
+#include "squash/zucchini/target_pool.h"
 
 namespace zucchini {
 
@@ -16,47 +17,51 @@ namespace {
 constexpr uint32_t kNoLabel = 0;
 }
 
-TargetsAffinity::TargetsAffinity() = default;
+TargetsAffinity::TargetsAffinity() {}
+
+TargetsAffinity::TargetsAffinity(const TargetPool* old_targets,
+                                 const TargetPool* new_targets)
+    : old_targets_(old_targets),
+      new_targets_(new_targets) {}
+
 TargetsAffinity::~TargetsAffinity() = default;
 
 void TargetsAffinity::InferFromSimilarities(
-    const EquivalenceMap& equivalences,
-    const std::vector<offset_t>& old_targets,
-    const std::vector<offset_t>& new_targets) {
-  forward_association_.assign(old_targets.size(), {});
-  backward_association_.assign(new_targets.size(), {});
+    const EquivalenceMap& equivalences) {
+  forward_association_.assign(old_targets_->size(), {});
+  backward_association_.assign(new_targets_->size(), {});
 
-  if (old_targets.empty() || new_targets.empty())
+  if (old_targets_->empty() || new_targets_->empty())
     return;
 
   key_t new_key = 0;
   for (auto candidate : equivalences) {  // Sorted by |dst_offset|.
     DCHECK_GT(candidate.similarity, 0.0);
-    while (new_key < new_targets.size() &&
-           new_targets[new_key] < candidate.eq.dst_offset) {
+    while (new_key < new_targets_->size() &&
+           new_targets_->targets()[new_key] < candidate.eq.dst_offset) {
       ++new_key;
     }
 
     // Visit each new target covered by |candidate.eq| and find / update its
     // associated old target.
-    for (; new_key < new_targets.size() &&
-           new_targets[new_key] < candidate.eq.dst_end();
+    for (; new_key < new_targets_->size() &&
+           new_targets_->targets()[new_key] < candidate.eq.dst_end();
          ++new_key) {
       if (backward_association_[new_key].affinity >= candidate.similarity)
         continue;
 
-      DCHECK_GE(new_targets[new_key], candidate.eq.dst_offset);
-      offset_t old_target = new_targets[new_key] - candidate.eq.dst_offset +
+      DCHECK_GE(new_targets_->targets()[new_key], candidate.eq.dst_offset);
+      offset_t old_target = new_targets_->targets()[new_key] - candidate.eq.dst_offset +
                             candidate.eq.src_offset;
       auto old_it =
-          std::lower_bound(old_targets.begin(), old_targets.end(), old_target);
+          std::lower_bound(old_targets_->begin(), old_targets_->end(), old_target);
       // If new target can be mapped via |candidate.eq| to an old target, then
       // attempt to associate them. Multiple new targets can compete for the
       // same old target. The heuristic here makes selections to maximize
       // |candidate.similarity|, and if a tie occurs, minimize new target offset
       // (by first-come, first-served).
-      if (old_it != old_targets.end() && *old_it == old_target) {
-        key_t old_key = static_cast<key_t>(old_it - old_targets.begin());
+      if (old_it != old_targets_->end() && *old_it == old_target) {
+        key_t old_key = static_cast<key_t>(old_it - old_targets_->begin());
         if (candidate.similarity > forward_association_[old_key].affinity) {
           // Reset other associations.
           if (forward_association_[old_key].affinity > 0.0)
@@ -91,7 +96,10 @@ uint32_t TargetsAffinity::AssignLabels(double min_affinity,
   return label;
 }
 
-double TargetsAffinity::AffinityBetween(key_t old_key, key_t new_key) const {
+double TargetsAffinity::AffinityBetween(offset_t old_target, offset_t new_target) const {
+  key_t old_key = old_targets_->KeyForOffset(old_target);
+  key_t new_key = new_targets_->KeyForOffset(new_target);
+
   DCHECK_LT(old_key, forward_association_.size());
   DCHECK_LT(new_key, backward_association_.size());
   if (forward_association_[old_key].affinity > 0.0 &&

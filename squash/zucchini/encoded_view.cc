@@ -11,8 +11,9 @@
 
 namespace zucchini {
 
-EncodedView::EncodedView(const ImageIndex& image_index)
-    : image_index_(image_index), pool_infos_(image_index.PoolCount()) {}
+EncodedView::EncodedView(const ImageIndex& image_index, const TargetPool* target_pool)
+    : image_index_(image_index),
+      target_pool_(target_pool) {}
 EncodedView::~EncodedView() = default;
 
 EncodedView::value_type EncodedView::Projection(offset_t location) const {
@@ -29,7 +30,7 @@ EncodedView::value_type EncodedView::Projection(offset_t location) const {
 
   // |location| points into a Reference.
   const ReferenceSet& ref_set = image_index_.refs(type);
-  IndirectReference ref = ref_set.at(location);
+  Reference ref = ref_set.at(location);
   DCHECK_GE(location, ref.location);
   DCHECK_LT(location, ref.location + ref_set.width());
 
@@ -41,10 +42,11 @@ EncodedView::value_type EncodedView::Projection(offset_t location) const {
 
   PoolTag pool_tag = ref_set.pool_tag();
 
+  key_t target_key = target_pool_->KeyForOffset(ref.target);
+
   // Targets with an associated Label will use its Label index in projection.
-  DCHECK_EQ(image_index_.pool(pool_tag).size(),
-            pool_infos_[pool_tag.value()].labels.size());
-  uint32_t label = pool_infos_[pool_tag.value()].labels[ref.target_key];
+  DCHECK_EQ(target_pool_->size(), labels_.size());
+  uint32_t label = labels_[target_key];
 
   // Projection is done on (|target|, |type|), shifted by a constant value to
   // avoid collisions with raw content.
@@ -55,23 +57,15 @@ EncodedView::value_type EncodedView::Projection(offset_t location) const {
 }
 
 size_t EncodedView::Cardinality() const {
-  size_t max_width = 0;
-  for (const auto& pool_info : pool_infos_)
-    max_width = std::max(max_width, pool_info.bound);
-  return max_width * image_index_.TypeCount() + kBaseReferenceProjection;
+  return bound_ * image_index_.TypeCount() + kBaseReferenceProjection;
 }
 
-void EncodedView::SetLabels(PoolTag pool,
-                            std::vector<uint32_t>&& labels,
+void EncodedView::SetLabels(std::vector<uint32_t>&& labels,
                             size_t bound) {
-  DCHECK_EQ(labels.size(), image_index_.pool(pool).size());
+  DCHECK_EQ(labels.size(), target_pool_->size());
   DCHECK(labels.empty() || *max_element(labels.begin(), labels.end()) < bound);
-  pool_infos_[pool.value()].labels = std::move(labels);
-  pool_infos_[pool.value()].bound = bound;
+  labels_ = std::move(labels);
+  bound_ = bound;
 }
-
-EncodedView::PoolInfo::PoolInfo() = default;
-EncodedView::PoolInfo::PoolInfo(PoolInfo&&) = default;
-EncodedView::PoolInfo::~PoolInfo() = default;
 
 }  // namespace zucchini

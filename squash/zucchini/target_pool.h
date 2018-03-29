@@ -55,6 +55,7 @@ class TargetPool {
 
   // Returns the number of targets.
   size_t size() const { return targets_.size(); }
+  bool empty() const { return targets_.empty(); }
   const_iterator begin() const { return targets_.begin(); }
   const_iterator end() const { return targets_.end(); }
 

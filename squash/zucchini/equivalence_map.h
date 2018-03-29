@@ -29,7 +29,7 @@ class EquivalenceSource;
 double GetTokenSimilarity(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinities,
     offset_t src,
     offset_t dst);
 
@@ -39,7 +39,7 @@ double GetTokenSimilarity(
 double GetEquivalenceSimilarity(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinities,
     const Equivalence& equivalence);
 
 // Extends |equivalence| forward and returns the result. This is related to
@@ -47,7 +47,7 @@ double GetEquivalenceSimilarity(
 EquivalenceCandidate ExtendEquivalenceForward(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinities,
     const EquivalenceCandidate& equivalence,
     double min_similarity);
 
@@ -56,7 +56,7 @@ EquivalenceCandidate ExtendEquivalenceForward(
 EquivalenceCandidate ExtendEquivalenceBackward(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinities,
     const EquivalenceCandidate& equivalence,
     double min_similarity);
 
@@ -69,7 +69,7 @@ EquivalenceCandidate ExtendEquivalenceBackward(
 EquivalenceCandidate VisitEquivalenceSeed(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinities,
     offset_t src,
     offset_t dst,
     double min_similarity);
@@ -131,7 +131,7 @@ class EquivalenceMap {
   void Build(const std::vector<offset_t>& old_sa,
              const EncodedView& old_view,
              const EncodedView& new_view,
-             const std::vector<TargetsAffinity>& targets_affinities,
+             const TargetsAffinity& targets_affinities,
              double min_similarity);
 
   size_t size() const { return candidates_.size(); }
@@ -145,7 +145,7 @@ class EquivalenceMap {
   void CreateCandidates(const std::vector<offset_t>& old_sa,
                         const EncodedView& old_view,
                         const EncodedView& new_view,
-                        const std::vector<TargetsAffinity>& targets_affinities,
+                        const TargetsAffinity& targets_affinities,
                         double min_similarity);
   // Sorts candidates by their offset in new image.
   void SortByDestination();
@@ -154,7 +154,7 @@ class EquivalenceMap {
   // shrunken. Unfit candidates may be removed.
   void Prune(const EncodedView& old_view,
              const EncodedView& new_view,
-             const std::vector<TargetsAffinity>& targets_affinities,
+             const TargetsAffinity& targets_affinities,
              double min_similarity);
 
   std::vector<EquivalenceCandidate> candidates_;

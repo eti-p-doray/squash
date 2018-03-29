@@ -16,10 +16,10 @@ namespace zucchini {
 namespace {
 
 // Returns true is |refs| is sorted.
-bool IsReferenceListSorted(const std::vector<IndirectReference>& refs) {
+bool IsReferenceListSorted(const std::vector<Reference>& refs) {
   return std::is_sorted(
       refs.begin(), refs.end(),
-      [](const IndirectReference& a, const IndirectReference& b) {
+      [](const Reference& a, const Reference& b) {
         return a.location < b.location;
       });
 }
@@ -37,7 +37,7 @@ void ReferenceSet::InitReferences(ReferenceReader&& ref_reader) {
   for (auto ref = ref_reader.GetNext(); ref.has_value();
        ref = ref_reader.GetNext()) {
     references_.push_back(
-        {ref->location, target_pool_.KeyForOffset(ref->target)});
+        {ref->location, ref->target});
   }
   DCHECK(IsReferenceListSorted(references_));
 }
@@ -46,15 +46,15 @@ void ReferenceSet::InitReferences(const std::vector<Reference>& refs) {
   DCHECK(references_.empty());
   references_.reserve(refs.size());
   std::transform(refs.begin(), refs.end(), std::back_inserter(references_),
-                 [&](const Reference& ref) -> IndirectReference {
+                 [&](const Reference& ref) -> Reference {
                    return {ref.location, target_pool_.KeyForOffset(ref.target)};
                  });
   DCHECK(IsReferenceListSorted(references_));
 }
 
-IndirectReference ReferenceSet::at(offset_t offset) const {
+Reference ReferenceSet::at(offset_t offset) const {
   auto pos = std::upper_bound(references_.begin(), references_.end(), offset,
-                              [](offset_t a, const IndirectReference& ref) {
+                              [](offset_t a, const Reference& ref) {
                                 return a < ref.location;
                               });
 

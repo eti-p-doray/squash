@@ -46,36 +46,38 @@ EquivalenceMap CreateEquivalenceMap(const ImageIndex& old_image_index,
   // - Association of targets based on previous EquivalenceMap. Note that the
   //   EquivalenceMap is empty on first iteration, so this is a no-op.
   // - Construction of refined EquivalenceMap based on new targets associations.
-  size_t pool_count = old_image_index.PoolCount();
-  std::vector<TargetsAffinity> target_affinities(pool_count);
+  TargetPool old_targets;
+  TargetPool new_targets;
+  for (const auto& old_target_pool : old_image_index.target_pools())
+    old_targets.InsertTargets(old_target_pool.second.targets());
+  for (const auto& new_target_pool : new_image_index.target_pools())
+    new_targets.InsertTargets(new_target_pool.second.targets());
+
+  TargetsAffinity targets_affinity(&old_targets, &new_targets);
 
   EquivalenceMap equivalence_map;
   for (size_t i = 0; i < kNumIterations; ++i) {
-    EncodedView old_view(old_image_index);
-    EncodedView new_view(new_image_index);
+    EncodedView old_view(old_image_index, &old_targets);
+    EncodedView new_view(new_image_index, &new_targets);
 
     // Associate targets from "old" to "new" image based on |equivalence_map|
     // for each reference pool.
-    for (const auto& old_target_pool : old_image_index.target_pools()) {
-      PoolTag pool = old_target_pool.first;
-      target_affinities[pool.value()].InferFromSimilarities(
-          equivalence_map, old_target_pool.second.targets(),
-          new_image_index.pool(pool).targets());
+    targets_affinity.InferFromSimilarities(equivalence_map);
 
-      // Creates labels for strongly associated targets.
-      std::vector<uint32_t> old_labels;
-      std::vector<uint32_t> new_labels;
-      size_t label_bound = target_affinities[pool.value()].AssignLabels(
-          kLargeEquivalenceSimilarity, &old_labels, &new_labels);
-      old_view.SetLabels(pool, std::move(old_labels), label_bound);
-      new_view.SetLabels(pool, std::move(new_labels), label_bound);
-    }
+    // Creates labels for strongly associated targets.
+    std::vector<uint32_t> old_labels;
+    std::vector<uint32_t> new_labels;
+    size_t label_bound = targets_affinity.AssignLabels(
+        kLargeEquivalenceSimilarity, &old_labels, &new_labels);
+    old_view.SetLabels(std::move(old_labels), label_bound);
+    new_view.SetLabels(std::move(new_labels), label_bound);
+
     // Build equivalence map, where references in "old" and "new" that
     // share common semantics (i.e., their respective targets were associated
     // earlier on) are considered equivalent.
     equivalence_map.Build(
         MakeSuffixArray<InducedSuffixSort>(old_view, old_view.Cardinality()),
-        old_view, new_view, target_affinities, kMinEquivalenceSimilarity);
+        old_view, new_view, targets_affinity, kMinEquivalenceSimilarity);
   }
 
   return equivalence_map;
@@ -166,20 +168,19 @@ bool GenerateReferencesDelta(const ReferenceSet& src_refs,
         equiv.src_offset + (dst_ref->location - equiv.dst_offset);
     auto src_ref = std::lower_bound(
         src_refs.begin(), src_refs.end(), src_loc,
-        [](const IndirectReference& a, offset_t b) { return a.location < b; });
+        [](const Reference& a, offset_t b) { return a.location < b; });
     for (; dst_ref != dst_refs.end() &&
            dst_ref->location + ref_width <= equiv.dst_end();
          ++dst_ref, ++src_ref) {
       // Local offset of |src_ref| should match that of |dst_ref|.
       DCHECK_EQ(src_ref->location - equiv.src_offset,
                 dst_ref->location - equiv.dst_offset);
-      offset_t old_offset =
-          src_refs.target_pool().OffsetForKey(src_ref->target_key);
+      //key_t src_target_key = sr
+      offset_t old_offset = src_ref->target;
       offset_t new_expected_offset = offset_mapper.ProjectOffset(old_offset);
       offset_t new_expected_key =
           projected_target_pool.KeyForOffset(new_expected_offset);
-      offset_t new_offset =
-          dst_refs.target_pool().OffsetForKey(dst_ref->target_key);
+      offset_t new_offset = dst_ref->target;
       offset_t new_key = projected_target_pool.KeyForOffset(new_offset);
 
       reference_delta_sink->PutNext(
@@ -211,8 +212,8 @@ bool GenerateRawElement(const std::vector<offset_t>& old_sa,
   ImageIndex new_image_index(new_image);
 
   EquivalenceMap equivalences;
-  equivalences.Build(old_sa, EncodedView(old_image_index),
-                     EncodedView(new_image_index), {},
+  equivalences.Build(old_sa, EncodedView(old_image_index, nullptr),
+                     EncodedView(new_image_index, nullptr), {},
                      kMinEquivalenceSimilarity);
 
   patch_writer->SetReferenceDeltaSink({});
@@ -321,7 +322,7 @@ status::Code GenerateRaw(ConstBufferView old_image,
   patch_writer->SetPatchType(PatchType::kRawPatch);
 
   ImageIndex old_image_index(old_image);
-  EncodedView old_view(old_image_index);
+  EncodedView old_view(old_image_index, nullptr);
   std::vector<offset_t> old_sa =
       MakeSuffixArray<InducedSuffixSort>(old_view, old_view.Cardinality());
 

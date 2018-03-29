@@ -18,7 +18,7 @@ class TargetPool;
 // Container of distinct indirect references of one type, along with traits.
 class ReferenceSet {
  public:
-  using const_iterator = std::vector<IndirectReference>::const_iterator;
+  using const_iterator = std::vector<Reference>::const_iterator;
 
   // |traits| specifies the reference represented. |target_pool| specifies
   // common targets shared by all reference represented, and mediates target
@@ -35,7 +35,7 @@ class ReferenceSet {
   void InitReferences(ReferenceReader&& ref_reader);
   void InitReferences(const std::vector<Reference>& refs);
 
-  const std::vector<IndirectReference>& references() const {
+  const std::vector<Reference>& references() const {
     return references_;
   }
   const TargetPool& target_pool() const { return target_pool_; }
@@ -47,7 +47,7 @@ class ReferenceSet {
   // Looks up the IndirectReference by an |offset| that it spans. |offset| is
   // assumed to be valid, i.e., |offset| must be spanned by some
   // IndirectReference in |references_|.
-  IndirectReference at(offset_t offset) const;
+  Reference at(offset_t offset) const;
 
   size_t size() const { return references_.size(); }
   const_iterator begin() const { return references_.begin(); }
@@ -57,7 +57,7 @@ class ReferenceSet {
   ReferenceTypeTraits traits_;
   const TargetPool& target_pool_;
   // List of distinct IndirectReference instances sorted by location.
-  std::vector<IndirectReference> references_;
+  std::vector<Reference> references_;
 };
 
 }  // namespace zucchini

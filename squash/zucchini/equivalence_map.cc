@@ -18,7 +18,7 @@ namespace zucchini {
 double GetTokenSimilarity(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     offset_t src,
     offset_t dst) {
   DCHECK(old_image_index.IsToken(src));
@@ -36,12 +36,12 @@ double GetTokenSimilarity(
                : -1.5;
   }
 
-  IndirectReference old_reference = old_image_index.refs(old_type).at(src);
-  IndirectReference new_reference = new_image_index.refs(new_type).at(dst);
+  Reference old_reference = old_image_index.refs(old_type).at(src);
+  Reference new_reference = new_image_index.refs(new_type).at(dst);
   PoolTag pool = old_image_index.refs(old_type).pool_tag();
 
-  double affinity = targets_affinities[pool.value()].AffinityBetween(
-      old_reference.target_key, new_reference.target_key);
+  double affinity = targets_affinity.AffinityBetween(old_reference.target,
+                                                     new_reference.target);
 
   // Both targets are not associated, which implies a weak match.
   if (affinity == 0.0)
@@ -54,7 +54,7 @@ double GetTokenSimilarity(
 double GetEquivalenceSimilarity(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     const Equivalence& equivalence) {
   double similarity = 0.0;
   for (offset_t k = 0; k < equivalence.length; ++k) {
@@ -64,7 +64,7 @@ double GetEquivalenceSimilarity(
       continue;
 
     similarity += GetTokenSimilarity(
-        old_image_index, new_image_index, targets_affinities,
+        old_image_index, new_image_index, targets_affinity,
         equivalence.src_offset + k, equivalence.dst_offset + k);
     if (similarity == kMismatchFatal)
       return kMismatchFatal;
@@ -75,7 +75,7 @@ double GetEquivalenceSimilarity(
 EquivalenceCandidate ExtendEquivalenceForward(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     const EquivalenceCandidate& candidate,
     double min_similarity) {
   Equivalence equivalence = candidate.eq;
@@ -102,7 +102,7 @@ EquivalenceCandidate ExtendEquivalenceForward(
     }
 
     double similarity = GetTokenSimilarity(
-        old_image_index, new_image_index, targets_affinities,
+        old_image_index, new_image_index, targets_affinity,
         equivalence.src_offset + k, equivalence.dst_offset + k);
     current_similarity += similarity;
     current_penalty = std::max(0.0, current_penalty) - similarity;
@@ -121,7 +121,7 @@ EquivalenceCandidate ExtendEquivalenceForward(
 EquivalenceCandidate ExtendEquivalenceBackward(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     const EquivalenceCandidate& candidate,
     double min_similarity) {
   Equivalence equivalence = candidate.eq;
@@ -146,7 +146,7 @@ EquivalenceCandidate ExtendEquivalenceBackward(
               new_image_index.LookupType(equivalence.dst_offset -
                                          k));  // Sanity check.
     double similarity = GetTokenSimilarity(
-        old_image_index, new_image_index, targets_affinities,
+        old_image_index, new_image_index, targets_affinity,
         equivalence.src_offset - k, equivalence.dst_offset - k);
 
     current_similarity += similarity;
@@ -169,7 +169,7 @@ EquivalenceCandidate ExtendEquivalenceBackward(
 EquivalenceCandidate VisitEquivalenceSeed(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     offset_t src,
     offset_t dst,
     double min_similarity) {
@@ -178,11 +178,11 @@ EquivalenceCandidate VisitEquivalenceSeed(
     return candidate;
   candidate =
       ExtendEquivalenceForward(old_image_index, new_image_index,
-                               targets_affinities, candidate, min_similarity);
+                               targets_affinity, candidate, min_similarity);
   if (candidate.similarity < min_similarity)
     return candidate;  // Not worth exploring any more.
   return ExtendEquivalenceBackward(old_image_index, new_image_index,
-                                   targets_affinities, candidate,
+                                   targets_affinity, candidate,
                                    min_similarity);
 }
 
@@ -203,14 +203,14 @@ void EquivalenceMap::Build(
     const std::vector<offset_t>& old_sa,
     const EncodedView& old_view,
     const EncodedView& new_view,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     double min_similarity) {
   DCHECK_EQ(old_sa.size(), old_view.size());
 
-  CreateCandidates(old_sa, old_view, new_view, targets_affinities,
+  CreateCandidates(old_sa, old_view, new_view, targets_affinity,
                    min_similarity);
   SortByDestination();
-  Prune(old_view, new_view, targets_affinities, min_similarity);
+  Prune(old_view, new_view, targets_affinity, min_similarity);
 
   offset_t coverage = 0;
   offset_t current_offset = 0;
@@ -228,7 +228,7 @@ void EquivalenceMap::CreateCandidates(
     const std::vector<offset_t>& old_sa,
     const EncodedView& old_view,
     const EncodedView& new_view,
-    const std::vector<TargetsAffinity>& targets_affinities,
+    const TargetsAffinity& targets_affinity,
     double min_similarity) {
   candidates_.clear();
 
@@ -251,7 +251,7 @@ void EquivalenceMap::CreateCandidates(
     EquivalenceCandidate best_candidate = {{0, 0, 0}, 0.0};
     for (auto it = match; it != old_sa.end(); ++it) {
       EquivalenceCandidate candidate = VisitEquivalenceSeed(
-          old_view.image_index(), new_view.image_index(), targets_affinities,
+          old_view.image_index(), new_view.image_index(), targets_affinity,
           static_cast<offset_t>(*it), dst_offset, min_similarity);
       if (candidate.similarity > best_similarity) {
         best_candidate = candidate;
@@ -263,7 +263,7 @@ void EquivalenceMap::CreateCandidates(
     }
     for (auto it = match; it != old_sa.begin(); --it) {
       EquivalenceCandidate candidate = VisitEquivalenceSeed(
-          old_view.image_index(), new_view.image_index(), targets_affinities,
+          old_view.image_index(), new_view.image_index(), targets_affinity,
           static_cast<offset_t>(it[-1]), dst_offset, min_similarity);
       if (candidate.similarity > best_similarity) {
         best_candidate = candidate;
@@ -291,7 +291,7 @@ void EquivalenceMap::SortByDestination() {
 void EquivalenceMap::Prune(
     const EncodedView& old_view,
     const EncodedView& new_view,
-    const std::vector<TargetsAffinity>& target_affinities,
+    const TargetsAffinity& target_affinities,
     double min_similarity) {
   for (auto current = candidates_.begin(); current != candidates_.end();
        ++current) {

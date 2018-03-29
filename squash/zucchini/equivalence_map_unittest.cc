@@ -42,7 +42,7 @@ ImageIndex MakeImageIndexForTesting(const char* a,
   return image_index;
 }
 
-std::vector<TargetsAffinity> MakeTargetsAffinitiesForTesting(
+TargetsAffinity MakeTargetsAffinitiesForTesting(
     const ImageIndex& old_image_index,
     const ImageIndex& new_image_index,
     const EquivalenceMap& equivalence_map) {

@@ -17,6 +17,8 @@
 
 namespace zucchini {
 
+class TargetPool;
+
 constexpr size_t kReferencePaddingProjection = 256;
 constexpr size_t kBaseReferenceProjection = 257;
 
@@ -118,7 +120,7 @@ class EncodedView {
 
   // |image_index| is the annotated image being adapted, and is required to
   // remain valid for the lifetime of the object.
-  explicit EncodedView(const ImageIndex& image_index);
+  explicit EncodedView(const ImageIndex& image_index, const TargetPool* target_pool);
   ~EncodedView();
 
   // Projects |location| to a scalar value that describes the content at a
@@ -135,7 +137,7 @@ class EncodedView {
 
   // Associates |labels| to targets for a given |pool|, replacing previous
   // association. Values in |labels| must be smaller than |bound|.
-  void SetLabels(PoolTag pool, std::vector<uint32_t>&& labels, size_t bound);
+  void SetLabels(std::vector<uint32_t>&& labels, size_t bound);
   const ImageIndex& image_index() const { return image_index_; }
 
   // Range functions.
@@ -148,17 +150,10 @@ class EncodedView {
   }
 
  private:
-  struct PoolInfo {
-    PoolInfo();
-    PoolInfo(PoolInfo&&);
-    ~PoolInfo();
-
-    std::vector<uint32_t> labels;
-    size_t bound = 0;
-  };
-
   const ImageIndex& image_index_;
-  std::vector<PoolInfo> pool_infos_;
+  std::vector<uint32_t> labels_;
+  size_t bound_ = 0;
+  const TargetPool* target_pool_;
 
   DISALLOW_COPY_AND_ASSIGN(EncodedView);
 };
